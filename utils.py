@@ -16,7 +16,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def plot_stats(frame_idx, rewards, losses):
     clear_output(True)
-    plt.figure(figsize=(20,5))
+    plt.figure(figsize=(20, 5))
     plt.subplot(131)
     plt.title(f'Total frames {frame_idx}. Avg reward over last 10 episodes: {np.mean(rewards[-10:])}')
     plt.plot(rewards)
@@ -24,7 +24,6 @@ def plot_stats(frame_idx, rewards, losses):
     plt.title('loss')
     plt.plot(losses)
     plt.show()
-
 
 
 class Buffer(object):
