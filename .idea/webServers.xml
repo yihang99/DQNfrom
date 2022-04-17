@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="6c260e46-4094-4a37-8d71-2115c6d462b3" name="Mine" url="http://101.6.96.131">
+        <fileTransfer host="101.6.96.131" port="8803" privateKey="C:\Users\yihang\.ssh\id_rsa" accessType="SFTP" keyPair="true">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+          <option name="port" value="8803" />
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>
