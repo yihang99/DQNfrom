@@ -37,7 +37,7 @@ class Buffer(object):
 
     def stack_frames(self, frame, start_frame=False):
         grey_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        resized_frame = cv2.resize(grey_frame, (110, 84)).reshape(1, 110, 84) / 256.
+        resized_frame = cv2.resize(grey_frame, (110, 84))[0:84, 18:102].reshape(1, 84, 84) / 256.
         if start_frame:
             self.current_state = np.zeros((self.num_stacked_frames, 84, 84), dtype=np.float)
         self.current_state = np.concatenate((resized_frame, self.current_state[:self.num_stacked_frames - 1]))
