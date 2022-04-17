@@ -10,6 +10,7 @@ import cv2
 import utils
 import model
 from parameters import *
+from utils import plot_stats
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -28,10 +29,10 @@ def main():
     env = gym.make(args.env)
     dqn = model.DQN((num_stacked_frames, 84, 84), env.action_space.n).to(device)
     target_dqn = model.DQN((num_stacked_frames, 84, 84), env.action_space.n).to(device)
-    dqn.load_state_dict(torch.load('checkpoint.pth'))
-    target_dqn.load_state_dict(torch.load('checkpoint.pth'))
+    dqn.load_state_dict(torch.load('checkpoint.pth', map_location='cpu'))
+    target_dqn.load_state_dict(torch.load('checkpoint.pth', map_location='cpu'))
 
-    optimizer = torch.optim.Adam(dqn.parameters(), lr=0.00001)
+    optimizer = torch.optim.Adam(dqn.parameters(), lr=learning_rate)
     buffer = utils.Buffer()
     frame = env.reset()
     next_frame = np.zeros(frame.shape)
@@ -40,13 +41,17 @@ def main():
 
     done = True
     step_idx = 0
-    for t in range(500000):
+    episode_rewards = []
+    losses = []
+    episode_reward = 0.0
+    for t in range(NUMBER_OF_TRAINING_STEPS):
         if done:  # if the last trajectory ends, start a new one
             frame = env.reset()
             state = buffer.stack_frames(frame, start_frame=True)
             print('Trajectory length: ', step_idx)
             step_idx = 0
         step_idx += 1
+        episode_reward += reward
 
         if random.random() < eps:
             action = env.action_space.sample()
@@ -80,10 +85,14 @@ def main():
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+            losses.append(loss.item())
 
-            if t % 500 == 0:
+            if step_idx % 10000 == 0:
+                plot_stats(step_idx, episode_rewards, losses)
+
+            if t % Q_NETWORK_RESET_INTERVAL == 0:
                 torch.save(dqn.state_dict(), 'checkpoint.pth')
-                target_dqn.load_state_dict(torch.load('checkpoint.pth'))
+                target_dqn.load_state_dict(torch.load('checkpoint.pth', map_location='cpu'))
                 print('t = ', t, '  loss = ', loss, '  action = ', action)
 
             # assert False,'I stop here'

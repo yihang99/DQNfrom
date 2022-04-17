@@ -23,6 +23,7 @@ def main():
     # args.output = get_output_folder(args.output, args.env)
 
     env = gym.make(args.env, render_mode='human')
+    # env = gym.make(args.env)
     dqn = model.DQN((num_stacked_frames, 84, 84), env.action_space.n)
     dqn.load_state_dict(torch.load('checkpoint.pth', map_location=torch.device('cpu')))
 
@@ -32,10 +33,14 @@ def main():
     print(type(frame), frame.shape)
 
     done = True
+    step_idx = 0
     for t in range(50000):
         if done:  # if the last trajectory ends, start a new one
+            print('Trajectory length: ', step_idx)
+            step_idx = 0
             frame = env.reset()
             state = buffer.stack_frames(frame, start_frame=True)
+        step_idx += 1
 
         action = dqn.act(state)
         for j in range(k):
@@ -45,10 +50,10 @@ def main():
         next_state = buffer.stack_frames(next_frame)
         state = next_state
 
-        cv2.imshow('anim', state[0])
+        # cv2.imshow('anim', state[0])
         # exit(1)
 
-        print(t, action)
+        # print(t, action)
 
     env.close()
 
