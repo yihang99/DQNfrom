@@ -43,7 +43,6 @@ def main():
     step_idx = 0
     episode_rewards = []
     losses = []
-    episode_reward = 0.0
     for t in range(NUMBER_OF_TRAINING_STEPS):
         if done:  # if the last trajectory ends, start a new one
             frame = env.reset()
@@ -51,7 +50,6 @@ def main():
             print('Trajectory length: ', step_idx)
             step_idx = 0
         step_idx += 1
-        episode_reward += reward
 
         if random.random() < eps:
             action = env.action_space.sample()
@@ -86,6 +84,10 @@ def main():
             loss.backward()
             optimizer.step()
             losses.append(loss.item())
+
+            if done:
+                episode_rewards.append(reward_sum)
+                break
 
             if step_idx % 10000 == 0:
                 plot_stats(step_idx, episode_rewards, losses)
