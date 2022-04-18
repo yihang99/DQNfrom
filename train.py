@@ -87,7 +87,6 @@ def main():
 
             if done:
                 episode_rewards.append(reward_sum)
-                break
 
             if step_idx % 10000 == 0:
                 plot_stats(step_idx, episode_rewards, losses)
