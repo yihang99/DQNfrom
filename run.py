@@ -4,9 +4,9 @@ import time
 import numpy as np
 import torch
 import gym
-# from gym.wrappers import Monitor
 import matplotlib.pyplot as plt
 import cv2
+from gym.wrappers import Monitor
 
 import model
 import utils
@@ -31,9 +31,9 @@ def main():
     else:
         env = gym.make(args.env)
 
-    # env = Monitor(env, "recording", force=True)
+    env = Monitor(env, "recording", force=True)
     dqn = model.DQN((num_stacked_frames, 108, 84), env.action_space.n)
-    dqn.load_state_dict(torch.load('ckpts/dqn_ckpt_17.pth', map_location=torch.device('cpu')))
+    dqn.load_state_dict(torch.load('ckpts/dqn_ckpt_21.pth', map_location=torch.device('cpu')))
 
     buffer = utils.Buffer()
     frame = env.reset()
