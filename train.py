@@ -43,7 +43,7 @@ def main():
         target_dqn2.load_state_dict(dqn2.state_dict())
 
         optimizer = torch.optim.Adam(dqn.parameters(), lr=learning_rate)
-        optimizer2 = torch.optim.Adam(dqn.parameters(), lr=learning_rate)
+        optimizer2 = torch.optim.Adam(dqn2.parameters(), lr=learning_rate)
         buffer = utils.Buffer()
         frame = env.reset()
         next_frame = np.zeros(frame.shape)

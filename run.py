@@ -26,7 +26,7 @@ def main():
     env = gym.make(args.env, render_mode='human')
     # env = gym.make(args.env)
     dqn = model.DQN((num_stacked_frames, 108, 84), env.action_space.n)
-    # dqn.load_state_dict(torch.load('ckpts/dqn_ckpt.pth', map_location=torch.device('cpu')))
+    dqn.load_state_dict(torch.load('ckpts/dqn_ckpt.pth', map_location=torch.device('cpu')))
 
     buffer = utils.Buffer()
     frame = env.reset()
