@@ -42,6 +42,7 @@ class Buffer(object):
         self.current_state = np.zeros((k, *compressed_size), dtype=np.float)
         self.buffer_list = []
         self.capacity = capacity
+        self.buffer_index = 0
 
     def stack_frames(self, frame, start_frame=False):
         grey_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -54,15 +55,15 @@ class Buffer(object):
         return self.current_state.copy()
 
     def push_transition(self, state, action, next_state, reward, done):
-        if len(self.buffer_list) <= self.capacity:
+        if len(self.buffer_list) < self.capacity:
             self.buffer_list.append((state, action, next_state, reward, done))
         else:
-            self.buffer_list[random.randint(0, self.capacity - 1)] = (state, action, next_state, reward, done)
+            self.buffer_list[self.buffer_index] = (state, action, next_state, reward, done)
+            self.buffer_index = (self.buffer_index + 1) % self.capacity
 
     def sample_transition(self, batch_size):
         sampled_transitions = random.sample(self.buffer_list, batch_size)
         states, actions, next_states, rewards, dones = zip(*sampled_transitions)
-        # print(states, actions, next_states, rewards, dones)
         return np.stack(states), actions, np.stack(next_states), rewards, dones
 
     def len(self):
