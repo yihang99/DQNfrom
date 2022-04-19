@@ -29,6 +29,8 @@ def main():
         env = gym.make(args.env, render_mode='human')
     else:
         env = gym.make(args.env)
+        
+    env = Monitor(env, "recording", force=True)
     dqn = model.DQN((num_stacked_frames, 108, 84), env.action_space.n)
     dqn.load_state_dict(torch.load('ckpts/dqn2_ckpt.pth', map_location=torch.device('cpu')))
 
