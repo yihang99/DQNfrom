@@ -6,7 +6,6 @@ import torch
 import gym
 import matplotlib.pyplot as plt
 import cv2
-from gym.wrappers import Monitor
 
 import model
 import utils
@@ -31,7 +30,6 @@ def main():
     else:
         env = gym.make(args.env)
 
-    env = Monitor(env, "recording", force=True)
     dqn = model.DQN((num_stacked_frames, 108, 84), env.action_space.n)
     dqn.load_state_dict(torch.load('ckpts/dqn_ckpt_21.pth', map_location=torch.device('cpu')))
 
