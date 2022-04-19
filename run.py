@@ -6,6 +6,7 @@ import torch
 import gym
 import matplotlib.pyplot as plt
 import cv2
+from gym.wrappers import Monitor
 
 import model
 import utils
