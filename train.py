@@ -22,7 +22,7 @@ def main():
     parser.add_argument('-e', '--env', default='Breakout-v0', help='Atari env name')
     parser.add_argument('-o', '--output', default='atari-v0', help='Directory to save data to')
     parser.add_argument('-s', '--seed', default=0, type=int, help='Random seed')
-    parser.add_argument('-n', '--new_model', action='store_true', default=True,
+    parser.add_argument('-n', '--new_model', action='store_false', default=True,
                         help='Set a new model for training; load the checkpoints in defalut case')
 
     args = parser.parse_args()
@@ -61,6 +61,7 @@ def main():
                 state = buffer.stack_frames(frame, start_frame=True)
                 print('Trajectory length: ', step_idx, '  Episode reward: ', episode_reward)
                 step_idx = 0
+                episode_rewards.append(episode_reward)
                 episode_reward = 0
             step_idx += 1
 
@@ -82,7 +83,6 @@ def main():
             buffer.push_transition(state, action, next_state, reward_sum, done)
             state = next_state
             episode_reward += reward_sum
-            episode_rewards.append(episode_reward)
 
             if buffer.len() > batch_size:
                 states, actions, next_states, rewards, dones = buffer.sample_transition(batch_size)

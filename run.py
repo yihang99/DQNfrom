@@ -17,16 +17,20 @@ def main():
     parser.add_argument('-e', '--env', default='Breakout-v0', help='Atari env name')
     parser.add_argument('-o', '--output', default='atari-v0', help='Directory to save data to')
     parser.add_argument('-s', '--seed', default=0, type=int, help='Random seed')
+    parser.add_argument('-v', '--vision', action='store_true', default=False,
+                        help='Display video if True')
 
     args = parser.parse_args()
     # args.input_shape = tuple(args.input_shape)
 
     # args.output = get_output_folder(args.output, args.env)
 
-    env = gym.make(args.env, render_mode='human')
-    # env = gym.make(args.env)
+    if args.vision:
+        env = gym.make(args.env, render_mode='human')
+    else:
+        env = gym.make(args.env)
     dqn = model.DQN((num_stacked_frames, 108, 84), env.action_space.n)
-    dqn.load_state_dict(torch.load('ckpts/dqn_ckpt.pth', map_location=torch.device('cpu')))
+    dqn.load_state_dict(torch.load('ckpts/dqn2_ckpt.pth', map_location=torch.device('cpu')))
 
     buffer = utils.Buffer()
     frame = env.reset()
@@ -36,10 +40,12 @@ def main():
     done = True
     step_idx = 0
     episode_reward = 0
-    for t in range(50000):
+    episode_rewards = []
+    while len(episode_rewards) < 20 + 1:
         if done:  # if the last trajectory ends, start a new one
             print('Trajectory length: ', step_idx, '  Episode reward: ', episode_reward)
             step_idx = 0
+            episode_rewards.append(episode_reward)
             episode_reward = 0
             frame = env.reset()
             state = buffer.stack_frames(frame, start_frame=True)
@@ -60,10 +66,12 @@ def main():
         episode_reward += reward_sum
 
         cv2.imshow('anim', abs(state[0] - state[num_stacked_frames - 1]))
-        if reward_sum != 0:
-            print(t, action, reward_sum, dqn(torch.tensor(np.float32(state)).unsqueeze(0)))
+        if 1:#reward_sum != 0:
+            pass
+            # print(t, action, reward_sum, dqn(torch.tensor(np.float32(state)).unsqueeze(0)))
 
     env.close()
+    print("Avg Epi Rwd: ", sum(episode_rewards) / 20)
 
 
 if __name__ == '__main__':
