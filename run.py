@@ -1,6 +1,7 @@
 import argparse
+import random
 import time
-
+import numpy as np
 import torch
 import gym
 import matplotlib.pyplot as plt
@@ -24,8 +25,8 @@ def main():
 
     env = gym.make(args.env, render_mode='human')
     # env = gym.make(args.env)
-    dqn = model.DQN((num_stacked_frames, 84, 84), env.action_space.n)
-    dqn.load_state_dict(torch.load('checkpoint.pth', map_location=torch.device('cpu')))
+    dqn = model.DQN((num_stacked_frames, 108, 84), env.action_space.n)
+    # dqn.load_state_dict(torch.load('ckpts/dqn_ckpt.pth', map_location=torch.device('cpu')))
 
     buffer = utils.Buffer()
     frame = env.reset()
@@ -34,26 +35,33 @@ def main():
 
     done = True
     step_idx = 0
+    episode_reward = 0
     for t in range(50000):
         if done:  # if the last trajectory ends, start a new one
-            print('Trajectory length: ', step_idx)
+            print('Trajectory length: ', step_idx, '  Episode reward: ', episode_reward)
             step_idx = 0
+            episode_reward = 0
             frame = env.reset()
             state = buffer.stack_frames(frame, start_frame=True)
         step_idx += 1
 
         action = dqn.act(state)
+        # action = env.action_space.sample()
+
+        reward_sum = 0
         for j in range(k):
             next_frame, reward, done, _ = env.step(action)
+            reward_sum += 1. if reward > 0 else 0.
+            # reward_sum += reward
             if done:
                 break
         next_state = buffer.stack_frames(next_frame)
         state = next_state
+        episode_reward += reward_sum
 
-        # cv2.imshow('anim', state[0])
-        # exit(1)
-
-        # print(t, action)
+        cv2.imshow('anim', abs(state[0] - state[num_stacked_frames - 1]))
+        if reward_sum != 0:
+            print(t, action, reward_sum, dqn(torch.tensor(np.float32(state)).unsqueeze(0)))
 
     env.close()
 

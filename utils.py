@@ -1,4 +1,5 @@
 import random
+import time
 
 import numpy as np
 import torch
@@ -26,19 +27,28 @@ def plot_stats(frame_idx, rewards, losses):
     plt.show()
 
 
+def compute_loss(dqn, target_dqn, states, actions, next_states, rewards, dones):
+    current_q = dqn(states).gather(1, actions.unsqueeze(1)).squeeze(1)
+    next_q = target_dqn(next_states).max(1)[0]
+    expected_current_q = rewards + gamma * next_q * (1 - dones)
+    loss = (current_q - expected_current_q.data).pow(2).mean()
+    return loss
+
+
 class Buffer(object):
-    def __init__(self, capacity=1000000):
+    def __init__(self, capacity=buffer_capacity):
         super(Buffer, self).__init__()
         self.num_stacked_frames = num_stacked_frames
-        self.current_state = np.zeros((k, 84, 84), dtype=np.float)
+        self.current_state = np.zeros((k, *compressed_size), dtype=np.float)
         self.buffer_list = []
         self.capacity = capacity
 
     def stack_frames(self, frame, start_frame=False):
         grey_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        resized_frame = cv2.resize(grey_frame, (110, 84))[0:84, 18:102].reshape(1, 84, 84) / 256.
+        resized_frame = cv2.resize(grey_frame, compressed_size[::-1]).reshape(1, *compressed_size) / 256.
+
         if start_frame:
-            self.current_state = np.zeros((self.num_stacked_frames, 84, 84), dtype=np.float)
+            self.current_state = np.zeros((self.num_stacked_frames, *compressed_size), dtype=np.float)
         self.current_state = np.concatenate((resized_frame, self.current_state[:self.num_stacked_frames - 1]))
 
         return self.current_state.copy()

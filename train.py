@@ -12,7 +12,9 @@ import model
 from parameters import *
 from utils import plot_stats
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device_str = "cuda" if torch.cuda.is_available() else "cpu"
+device = torch.device(device_str)
+
 
 
 def main():
@@ -20,86 +22,105 @@ def main():
     parser.add_argument('-e', '--env', default='Breakout-v0', help='Atari env name')
     parser.add_argument('-o', '--output', default='atari-v0', help='Directory to save data to')
     parser.add_argument('-s', '--seed', default=0, type=int, help='Random seed')
+    parser.add_argument('-n', '--new_model', action='store_true', default=True,
+                        help='Set a new model for training; load the checkpoints in defalut case')
 
     args = parser.parse_args()
-    # args.input_shape = tuple(args.input_shape)
 
-    # args.output = get_output_folder(args.output, args.env)
+    with open('logs/' + time.ctime().replace(' ', '_')[4:20] + args.env + '.txt', 'w') as f:
 
-    env = gym.make(args.env)
-    dqn = model.DQN((num_stacked_frames, 84, 84), env.action_space.n).to(device)
-    target_dqn = model.DQN((num_stacked_frames, 84, 84), env.action_space.n).to(device)
-    dqn.load_state_dict(torch.load('checkpoint.pth', map_location='cpu'))
-    target_dqn.load_state_dict(torch.load('checkpoint.pth', map_location='cpu'))
+        env = gym.make(args.env)
+        dqn = model.DQN((num_stacked_frames, 108, 84), env.action_space.n).to(device)
+        target_dqn = model.DQN((num_stacked_frames, 108, 84), env.action_space.n).to(device)
+        dqn2 = model.DQN((num_stacked_frames, 108, 84), env.action_space.n).to(device)
+        target_dqn2 = model.DQN((num_stacked_frames, 108, 84), env.action_space.n).to(device)
 
-    optimizer = torch.optim.Adam(dqn.parameters(), lr=learning_rate)
-    buffer = utils.Buffer()
-    frame = env.reset()
-    next_frame = np.zeros(frame.shape)
-    state = buffer.stack_frames(frame, start_frame=True)
-    print(type(frame), frame.shape)
+        if not args.new_model:
+            dqn.load_state_dict(torch.load('ckpts/dqn_ckpt.pth', map_location='cpu'))
+            target_dqn.load_state_dict(torch.load('ckpts/dqn2_ckpt.pth', map_location='cpu'))
 
-    done = True
-    step_idx = 0
-    episode_rewards = []
-    losses = []
-    for t in range(NUMBER_OF_TRAINING_STEPS):
-        if done:  # if the last trajectory ends, start a new one
-            frame = env.reset()
-            state = buffer.stack_frames(frame, start_frame=True)
-            print('Trajectory length: ', step_idx)
-            step_idx = 0
-        step_idx += 1
+        target_dqn.load_state_dict(dqn.state_dict())
+        target_dqn2.load_state_dict(dqn2.state_dict())
 
-        if random.random() < eps:
-            action = env.action_space.sample()
-        else:
-            action = dqn.act(state)
+        optimizer = torch.optim.Adam(dqn.parameters(), lr=learning_rate)
+        optimizer2 = torch.optim.Adam(dqn.parameters(), lr=learning_rate)
+        buffer = utils.Buffer()
+        frame = env.reset()
+        next_frame = np.zeros(frame.shape)
+        state = buffer.stack_frames(frame, start_frame=True)
+        print(type(frame), frame.shape)
 
-        reward_sum = 0
-        for j in range(k):
-            next_frame, reward, done, _ = env.step(action)
-            reward_sum += reward
-            if done:
-                break
-        next_state = buffer.stack_frames(next_frame)
-        buffer.push_transition(state, action, next_state, reward_sum, done)
-        state = next_state
+        done = True
+        step_idx = 0
+        episode_reward = 0
+        episode_rewards = []
+        losses = []
+        for t in range(NUMBER_OF_TRAINING_STEPS):
+            if done:  # if the last trajectory ends, start a new one
+                frame = env.reset()
+                state = buffer.stack_frames(frame, start_frame=True)
+                print('Trajectory length: ', step_idx, '  Episode reward: ', episode_reward)
+                step_idx = 0
+                episode_reward = 0
+            step_idx += 1
 
-        if buffer.len() > batch_size:
-            states, actions, next_states, rewards, dones = buffer.sample_transition(batch_size)
+            if random.random() < eps_max - t / NUMBER_OF_TRAINING_STEPS * (eps_max - eps_min):
+                action = env.action_space.sample()
+                # if random.random() < eps_max - t / NUMBER_OF_TRAINING_STEPS * (eps_max - eps_min):
+                #     action = 1
+            else:
+                action = dqn.act(state).item()
 
-            states = torch.tensor(np.float32(states)).to(device)
-            next_states = torch.tensor(np.float32(next_states)).to(device)
-            actions = torch.tensor(actions).to(device)
-            rewards = torch.tensor(rewards).to(device)
-            dones = torch.FloatTensor(dones).to(device)
+            reward_sum = 0.
+            for j in range(k):
+                next_frame, reward, done, _ = env.step(action)
+                reward_sum += 1. if reward > 0 else 0.
+                # reward_sum += reward
+                if done:
+                    break
+            next_state = buffer.stack_frames(next_frame)
+            buffer.push_transition(state, action, next_state, reward_sum, done)
+            state = next_state
+            episode_reward += reward_sum
+            episode_rewards.append(episode_reward)
 
-            current_q = dqn(states).gather(1, actions.unsqueeze(1)).squeeze(1)
-            next_q = target_dqn(next_states).max(1)[0]
-            expected_current_q = rewards + gamma * next_q * (1 - dones)
-            loss = (current_q - expected_current_q.data).pow(2).mean()
+            if buffer.len() > batch_size:
+                states, actions, next_states, rewards, dones = buffer.sample_transition(batch_size)
 
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-            losses.append(loss.item())
+                states = torch.tensor(np.float32(states)).to(device)
+                next_states = torch.tensor(np.float32(next_states)).to(device)
+                actions = torch.tensor(actions).to(device)
+                rewards = torch.tensor(rewards).to(device)
+                dones = torch.FloatTensor(dones).to(device)
 
-            if done:
-                episode_rewards.append(reward_sum)
-                break
+                if t % 2 == 0:
+                    loss = utils.compute_loss(dqn, target_dqn2, states, actions, next_states, rewards, dones)
+                    optimizer.zero_grad()
+                    loss.backward()
+                    optimizer.step()
+                else:
+                    loss = utils.compute_loss(dqn2, target_dqn, states, actions, next_states, rewards, dones)
+                    optimizer2.zero_grad()
+                    loss.backward()
+                    optimizer2.step()
 
-            if step_idx % 10000 == 0:
-                plot_stats(step_idx, episode_rewards, losses)
+                losses.append(loss.item())
 
-            if t % Q_NETWORK_RESET_INTERVAL == 0:
-                torch.save(dqn.state_dict(), 'checkpoint.pth')
-                target_dqn.load_state_dict(torch.load('checkpoint.pth', map_location='cpu'))
-                print('t = ', t, '  loss = ', loss, '  action = ', action)
+                if t % SAVE_CKPT_INTERVAL == 0:
+                    torch.save(dqn.state_dict(), 'ckpts/dqn_ckpt.pth')
+                    torch.save(dqn2.state_dict(), 'ckpts/dqn2_ckpt.pth')
+                    print('t = ', t, '  loss = {:.6f}'.format(loss.data.item()), '  action = ', action)
 
-            # assert False,'I stop here'
+                print('t = ', t, '  l = {:.8f}'.format(loss.data.item()), '  a = ', action,
+                      '  r = ', reward, file=f)
 
-    env.close()
+                if t % Q_NETWORK_RESET_INTERVAL == 0:
+                    target_dqn.load_state_dict(dqn.state_dict())
+                    target_dqn2.load_state_dict(dqn2.state_dict())
+                    # torch.save(dqn.state_dict(), 'ckpts/checkpoint.pth')
+                    # target_dqn.load_state_dict(torch.load('ckpts/checkpoint.pth', map_location='cpu'))
+
+        env.close()
 
 
 if __name__ == '__main__':
