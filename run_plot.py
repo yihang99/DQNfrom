@@ -45,9 +45,10 @@ def main():
         episode_rewards = []
         while len(episode_rewards) < 20 + 1:
             if done:  # if the last trajectory ends, start a new one
-                print('Trajectory length: ', step_idx,
-                      '  Truncated Episode reward: ', truncated_episode_reward,
-                      '  Episode reward: ', episode_reward)
+                print('Epi index: ', len(episode_rewards),
+                      '  Traj length: ', step_idx,
+                      '  Truncated Epi rwd: ', truncated_episode_reward,
+                      '  Epi rwd: ', episode_reward)
                 step_idx = 0
                 truncated_episode_rewards.append(truncated_episode_reward)
                 truncated_episode_reward = 0
@@ -76,10 +77,10 @@ def main():
 
         avg_truncated_episode_rewards = sum(truncated_episode_rewards) / 20
         avg_episode_rewards = sum(episode_rewards) / 20
-        print("Avg Trun Epi Rwd: ", avg_truncated_episode_rewards,
+        print(ckpt_ind, "Avg Trun Epi Rwd: ", avg_truncated_episode_rewards,
               "  Avg Epi Rwd: ", avg_episode_rewards)
         with open('Sim_Result.txt', 'a') as f:
-            print(str(avg_truncated_episode_rewards)+', '+str(avg_episode_rewards), file=f)
+            print(str(ckpt_ind)+', '+str(avg_truncated_episode_rewards)+', '+str(avg_episode_rewards), file=f)
     env.close()
 
 
