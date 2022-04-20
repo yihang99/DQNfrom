@@ -30,19 +30,13 @@ def main():
     env = gym.make(args.env)
     dqn = model.DQN((num_stacked_frames, 108, 84), env.action_space.n).to(device)
     target_dqn = model.DQN((num_stacked_frames, 108, 84), env.action_space.n).to(device)
-    dqn2 = model.DQN((num_stacked_frames, 108, 84), env.action_space.n).to(device)
-    target_dqn2 = model.DQN((num_stacked_frames, 108, 84), env.action_space.n).to(device)
 
     if not args.new_model:
-        dqn.load_state_dict(torch.load('ckpts/dqn_ckpt.pth', map_location='cpu'))
-        dqn2.load_state_dict(torch.load('ckpts/dqn2_ckpt.pth', map_location='cpu'))
+        dqn.load_state_dict(torch.load('ckpts_single/dqn_single_ckpt.pth', map_location='cpu'))
 
     target_dqn.load_state_dict(dqn.state_dict())
-    target_dqn2.load_state_dict(dqn2.state_dict())
-    current_actor_is_dqn = False
 
     optimizer = torch.optim.Adam(dqn.parameters(), lr=learning_rate)
-    optimizer2 = torch.optim.Adam(dqn2.parameters(), lr=learning_rate)
     buffer = utils.Buffer()
     frame = env.reset()
     next_frame = np.zeros(frame.shape)
@@ -61,7 +55,7 @@ def main():
             state = buffer.stack_frames(frame, start_frame=True)
             print('Trajectory length: ', step_idx, '  Episode reward: ', episode_reward)
             step_idx = 0
-            current_actor_is_dqn = not current_actor_is_dqn
+
             episode_rewards.append(episode_reward)
             episode_reward = 0
         step_idx += 1
@@ -69,10 +63,7 @@ def main():
         if random.random() < eps_max - t / NUMBER_OF_TRAINING_STEPS * (eps_max - eps_min):
             action = env.action_space.sample()
         else:
-            if current_actor_is_dqn:
-                action = dqn.act(state).item()
-            else:
-                action = dqn2.act(state).item()
+            action = dqn.act(state).item()
 
         reward_sum = 0.
         for j in range(k):
@@ -95,22 +86,15 @@ def main():
             rewards = torch.tensor(rewards).to(device)
             dones = torch.FloatTensor(dones).to(device)
 
-            if t % 2 == 0:
-                loss = utils.compute_loss(dqn, target_dqn2, states, actions, next_states, rewards, dones)
-                optimizer.zero_grad()
-                loss.backward()
-                optimizer.step()
-            else:
-                loss = utils.compute_loss(dqn2, target_dqn, states, actions, next_states, rewards, dones)
-                optimizer2.zero_grad()
-                loss.backward()
-                optimizer2.step()
+            loss = utils.compute_loss(dqn, target_dqn, states, actions, next_states, rewards, dones)
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
 
             losses.append(loss.item())
 
             if t % SAVE_CKPT_INTERVAL == 0:
-                torch.save(dqn.state_dict(), 'ckpts/dqn_ckpt.pth')
-                torch.save(dqn2.state_dict(), 'ckpts/dqn2_ckpt.pth')
+                torch.save(dqn.state_dict(), 'ckpts_single/dqn_single_ckpt.pth')
                 print('t = ', t, '  loss = {:.6f}'.format(loss.data.item()), '  action = ', action)
                 with open(log_file_name, 'a') as f:
                     print('t = ', t, '  l = {:.8f}'.format(loss.data.item()), '  a = ', action,
@@ -118,10 +102,8 @@ def main():
 
         if t % Q_NETWORK_RESET_INTERVAL == 0:
             target_dqn.load_state_dict(dqn.state_dict())
-            target_dqn2.load_state_dict(dqn2.state_dict())
             ckpt_ind = int(t / Q_NETWORK_RESET_INTERVAL)
-            torch.save(dqn.state_dict(), 'ckpts/dqn_ckpt_{:0>2d}.pth'.format(ckpt_ind))
-            torch.save(dqn2.state_dict(), 'ckpts/dqn2_ckpt_{:0>2d}.pth'.format(ckpt_ind))
+            torch.save(dqn.state_dict(), 'ckpts_single/dqn_single_ckpt_{:0>2d}.pth'.format(ckpt_ind))
 
         env.close()
 

@@ -31,7 +31,8 @@ def main():
         env = gym.make(args.env)
 
     dqn = model.DQN((num_stacked_frames, 108, 84), env.action_space.n)
-    dqn.load_state_dict(torch.load('ckpts/dqn_ckpt_21.pth', map_location=torch.device('cpu')))
+    #dqn.load_state_dict(torch.load('ckpts_single/dqn_single_ckpt_59.pth', map_location=torch.device('cpu')))
+    dqn.load_state_dict(torch.load('ckpts/dqn_ckpt_59.pth', map_location=torch.device('cpu')))
 
     buffer = utils.Buffer()
     frame = env.reset()
@@ -66,10 +67,9 @@ def main():
         state = next_state
         episode_reward += reward_sum
 
-        cv2.imshow('anim', abs(state[0] - state[num_stacked_frames - 1]))
-        if 1:#reward_sum != 0:
-            pass
-            # print(t, action, reward_sum, dqn(torch.tensor(np.float32(state)).unsqueeze(0)))
+        if args.vision:
+            cv2.imshow('anim', abs(state[0] - state[num_stacked_frames - 1]))
+        # print(t, action, reward_sum, dqn(torch.tensor(np.float32(state)).unsqueeze(0)))
 
     env.close()
     print("Avg Epi Rwd: ", sum(episode_rewards) / 20)
