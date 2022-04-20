@@ -11,6 +11,9 @@ import model
 import utils
 from parameters import *
 
+device_str = "cuda" if torch.cuda.is_available() else "cpu"
+device = torch.device(device_str)
+
 
 def main():
     parser = argparse.ArgumentParser(description='Run DQN')
@@ -30,9 +33,9 @@ def main():
     else:
         env = gym.make(args.env)
 
-    dqn = model.DQN((num_stacked_frames, 108, 84), env.action_space.n)
+    dqn = model.DQN((num_stacked_frames, 108, 84), env.action_space.n).to(device)
     #dqn.load_state_dict(torch.load('ckpts_single/dqn_single_ckpt_59.pth', map_location=torch.device('cpu')))
-    dqn.load_state_dict(torch.load('ckpts/dqn_ckpt_59.pth', map_location=torch.device('cpu')))
+    dqn.load_state_dict(torch.load('ckpts/dqn_ckpt_29.pth', map_location=torch.device('cpu')))
 
     buffer = utils.Buffer()
     frame = env.reset()
