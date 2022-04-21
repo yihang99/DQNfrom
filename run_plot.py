@@ -29,8 +29,9 @@ def main():
 
     points = []
     for ckpt_ind in range(int(NUMBER_OF_TRAINING_STEPS / Q_NETWORK_RESET_INTERVAL)):
-        #dqn.load_state_dict(torch.load('ckpts_single/dqn_single_ckpt_59.pth', map_location=torch.device('cpu')))
-        dqn.load_state_dict(torch.load('ckpts_single/dqn_single_ckpt_{:0>2d}.pth'.format(ckpt_ind), map_location=torch.device('cpu')))
+        # dqn.load_state_dict(torch.load('ckpts_single/dqn_single_ckpt_{:0>2d}.pth'.format(ckpt_ind), map_location=torch.device('cpu')))
+        dqn.load_state_dict(
+            torch.load('ckpts/dqn_ckpt_{:0>2d}.pth'.format(ckpt_ind), map_location=torch.device('cpu')))
 
         buffer = utils.Buffer()
         frame = env.reset()
@@ -79,7 +80,7 @@ def main():
         avg_episode_rewards = sum(episode_rewards) / 20
         print(ckpt_ind, "Avg Trun Epi Rwd: ", avg_truncated_episode_rewards,
               "  Avg Epi Rwd: ", avg_episode_rewards)
-        with open('Sim_Result.txt', 'a') as f:
+        with open('Sim_Result_double.txt', 'a') as f:
             print(str(ckpt_ind)+', '+str(avg_truncated_episode_rewards)+', '+str(avg_episode_rewards), file=f)
     env.close()
 
