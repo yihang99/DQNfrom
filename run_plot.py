@@ -20,6 +20,7 @@ def main():
     parser.add_argument('-e', '--env', default='Breakout-v0', help='Atari env name')
     parser.add_argument('-o', '--output', default='atari-v0', help='Directory to save data to')
     parser.add_argument('-s', '--seed', default=0, type=int, help='Random seed')
+    parser.add_argument('-n', '--net_type', default='?', help='type of network tested')
 
     args = parser.parse_args()
 
@@ -28,10 +29,15 @@ def main():
     dqn = model.DQN((num_stacked_frames, 108, 84), env.action_space.n).to(device)
 
     points = []
-    for ckpt_ind in range(int(NUMBER_OF_TRAINING_STEPS / Q_NETWORK_RESET_INTERVAL)):
-        # dqn.load_state_dict(torch.load('ckpts_single/dqn_single_ckpt_{:0>2d}.pth'.format(ckpt_ind), map_location=torch.device('cpu')))
-        dqn.load_state_dict(
-            torch.load('ckpts/dqn_ckpt_{:0>2d}.pth'.format(ckpt_ind), map_location=torch.device('cpu')))
+    for ckpt_ind in range(int(NUMBER_OF_TRAINING_STEPS / SAVE_CKPT_INTERVAL)):
+        if args.net_type == 'db':
+            dqn.load_state_dict(torch.load('ckpts_double_new/dqn_single_ckpt_{:0>2d}.pth'.format(ckpt_ind),
+                                           map_location=torch.device('cpu')))
+        elif args.net_type == 'sg':
+            dqn.load_state_dict(torch.load('ckpts_single_new/dqn_single_ckpt_{:0>2d}.pth'.format(ckpt_ind),
+                                           map_location=torch.device('cpu')))
+        else:
+            assert False, 'Net Type Unspecified'
 
         buffer = utils.Buffer()
         frame = env.reset()
@@ -44,7 +50,7 @@ def main():
         episode_reward = 0
         truncated_episode_rewards = []
         episode_rewards = []
-        while len(episode_rewards) < 20 + 1:
+        while len(episode_rewards) < 50 + 1:
             if done:  # if the last trajectory ends, start a new one
                 print('Epi index: ', len(episode_rewards),
                       '  Traj length: ', step_idx,
@@ -76,11 +82,11 @@ def main():
             truncated_episode_reward += truncated_reward_sum
             episode_reward += reward_sum
 
-        avg_truncated_episode_rewards = sum(truncated_episode_rewards) / 20
-        avg_episode_rewards = sum(episode_rewards) / 20
+        avg_truncated_episode_rewards = sum(truncated_episode_rewards) / 50
+        avg_episode_rewards = sum(episode_rewards) / 50
         print(ckpt_ind, "Avg Trun Epi Rwd: ", avg_truncated_episode_rewards,
               "  Avg Epi Rwd: ", avg_episode_rewards)
-        with open('Sim_Result_double.txt', 'a') as f:
+        with open('Sim_Result_'+args.net_type+'.txt', 'a') as f:
             print(str(ckpt_ind)+', '+str(avg_truncated_episode_rewards)+', '+str(avg_episode_rewards), file=f)
     env.close()
 

@@ -21,8 +21,8 @@ def main():
     parser.add_argument('-e', '--env', default='Breakout-v0', help='Atari env name')
     parser.add_argument('-o', '--output', default='atari-v0', help='Directory to save data to')
     parser.add_argument('-s', '--seed', default=0, type=int, help='Random seed')
-    parser.add_argument('-n', '--new_model', action='store_true', default=False,
-                        help='Set a new model for training; load the checkpoints in defalut case')
+    # parser.add_argument('-n', '--new_model', action='store_true', default=False,
+    #                     help='Set a new model for training; load the checkpoints in defalut case')
 
     args = parser.parse_args()
     log_file_name = 'logs/' + time.ctime().replace(' ', '_')[4:20] + args.env + '.txt'
@@ -33,9 +33,9 @@ def main():
     dqn2 = model.DQN((num_stacked_frames, 108, 84), env.action_space.n).to(device)
     target_dqn2 = model.DQN((num_stacked_frames, 108, 84), env.action_space.n).to(device)
 
-    if not args.new_model:
-        dqn.load_state_dict(torch.load('ckpts/dqn_ckpt.pth', map_location='cpu'))
-        dqn2.load_state_dict(torch.load('ckpts/dqn2_ckpt.pth', map_location='cpu'))
+    # if not args.new_model:
+    #     dqn.load_state_dict(torch.load('ckpts/dqn_ckpt.pth', map_location='cpu'))
+    #     dqn2.load_state_dict(torch.load('ckpts/dqn2_ckpt.pth', map_location='cpu'))
 
     target_dqn.load_state_dict(dqn.state_dict())
     target_dqn2.load_state_dict(dqn2.state_dict())
@@ -108,21 +108,15 @@ def main():
 
             losses.append(loss.item())
 
-            if t % SAVE_CKPT_INTERVAL == 0:
-                torch.save(dqn.state_dict(), 'ckpts/dqn_ckpt.pth')
-                torch.save(dqn2.state_dict(), 'ckpts/dqn2_ckpt.pth')
-                print('t = ', t, '  loss = {:.6f}'.format(loss.data.item()), '  action = ', action)
-                with open(log_file_name, 'a') as f:
-                    print('t = ', t, '  l = {:.8f}'.format(loss.data.item()), '  a = ', action,
-                          '  r = ', reward_sum, file=f)
-
         if t % Q_NETWORK_RESET_INTERVAL == 0:
             target_dqn.load_state_dict(dqn.state_dict())
             target_dqn2.load_state_dict(dqn2.state_dict())
-            ckpt_ind = int(t / Q_NETWORK_RESET_INTERVAL)
-            torch.save(dqn.state_dict(), 'ckpts/dqn_ckpt_{:0>2d}.pth'.format(ckpt_ind))
-            torch.save(dqn2.state_dict(), 'ckpts/dqn2_ckpt_{:0>2d}.pth'.format(ckpt_ind))
+            print('t =', t, 'Net reset here')
 
+        if t % SAVE_CKPT_INTERVAL == 0:
+            ckpt_ind = int(t / SAVE_CKPT_INTERVAL)
+            torch.save(dqn.state_dict(), 'ckpts_double_new/dqn_single_ckpt_{:0>2d}.pth'.format(ckpt_ind))
+            torch.save(dqn2.state_dict(), 'ckpts_double_new/dqn2_single_ckpt_{:0>2d}.pth'.format(ckpt_ind))
         env.close()
 
 
