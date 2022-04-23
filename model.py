@@ -41,6 +41,29 @@ class DQN(nn.Module):
         action = q_value.max(1)[1].data[0]
         return action
 
+ class LinearQN(nn.Module):
+    def __init__(self, input_shape, num_actions):
+        super(DQN, self).__init__()
+        self.input_shape = input_shape
+        self.num_actions = num_actions
+        self.mlp = nn.Sequential(
+            nn.Linear(4 * 84 * 108, 64 * 10 * 7),
+            nn.LeakyReLU(),
+            nn.Linear(64 * 10 * 7, 256),
+            nn.LeakyReLU(),
+            nn.Linear(256, num_actions)
+        )
+
+    def forward(self, x):
+        x = x.reshape(x.shape[0], -1)
+        x = self.mlp(x)
+        return x
+
+    def act(self, state, device=device):
+        state = torch.tensor(np.float32(state)).unsqueeze(0).to(device)
+        q_value = self.forward(state)
+        action = q_value.max(1)[1].data[0]
+        return action
 
 def main():
     shape = num_stacked_frames, *compressed_size
