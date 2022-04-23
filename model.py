@@ -41,9 +41,10 @@ class DQN(nn.Module):
         action = q_value.max(1)[1].data[0]
         return action
 
- class LinearQN(nn.Module):
+
+class LinearQN(nn.Module):
     def __init__(self, input_shape, num_actions):
-        super(DQN, self).__init__()
+        super(LinearQN, self).__init__()
         self.input_shape = input_shape
         self.num_actions = num_actions
         self.mlp = nn.Sequential(
