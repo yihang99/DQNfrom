@@ -115,8 +115,8 @@ def main():
 
         if t % SAVE_CKPT_INTERVAL == 0:
             ckpt_ind = int(t / SAVE_CKPT_INTERVAL)
-            torch.save(dqn.state_dict(), 'ckpts_double_new/dqn_single_ckpt_{:0>2d}.pth'.format(ckpt_ind))
-            torch.save(dqn2.state_dict(), 'ckpts_double_new/dqn2_single_ckpt_{:0>2d}.pth'.format(ckpt_ind))
+            torch.save(dqn.state_dict(), 'ckpts_double_new2/dqn_double_ckpt_{:0>2d}.pth'.format(ckpt_ind))
+            torch.save(dqn2.state_dict(), 'ckpts_double_new2/dqn2_double_ckpt_{:0>2d}.pth'.format(ckpt_ind))
         env.close()
 
 

@@ -34,8 +34,8 @@ def main():
         env = gym.make(args.env)
 
     dqn = model.DQN((num_stacked_frames, 108, 84), env.action_space.n).to(device)
-    dqn.load_state_dict(torch.load('ckpts_double_new/dqn_single_ckpt_30.pth', map_location=torch.device('cpu')))
-    # dqn.load_state_dict(torch.load('ckpts/dqn_ckpt_29.pth', map_location=torch.device('cpu')))
+    # dqn.load_state_dict(torch.load('ckpts_double_new/dqn_double_ckpt_30.pth', map_location=torch.device('cpu')))
+    dqn.load_state_dict(torch.load('ckpts_single_new/dqn_single_ckpt_30.pth', map_location=torch.device('cpu')))
 
     buffer = utils.Buffer()
     frame = env.reset()
@@ -44,12 +44,19 @@ def main():
 
     done = True
     step_idx = 0
+    truncated_episode_reward = 0
     episode_reward = 0
+    truncated_episode_rewards = []
     episode_rewards = []
-    while len(episode_rewards) < 20 + 1:
+    while len(episode_rewards) < 100 + 1:
         if done:  # if the last trajectory ends, start a new one
-            print('Trajectory length: ', step_idx, '  Episode reward: ', episode_reward)
+            print('Epi index: ', len(episode_rewards),
+                  '  Traj length: ', step_idx,
+                  '  Truncated Epi rwd: ', truncated_episode_reward,
+                  '  Epi rwd: ', episode_reward)
             step_idx = 0
+            truncated_episode_rewards.append(truncated_episode_reward)
+            truncated_episode_reward = 0
             episode_rewards.append(episode_reward)
             episode_reward = 0
             frame = env.reset()
@@ -59,15 +66,17 @@ def main():
         action = dqn.act(state)
         # action = env.action_space.sample()
 
+        truncated_reward_sum = 0
         reward_sum = 0
         for j in range(k):
             next_frame, reward, done, _ = env.step(action)
-            reward_sum += 1. if reward > 0 else 0.
-            # reward_sum += reward
+            truncated_reward_sum += 1. if reward > 0 else 0.
+            reward_sum += reward
             if done:
                 break
         next_state = buffer.stack_frames(next_frame)
         state = next_state
+        truncated_episode_reward += truncated_reward_sum
         episode_reward += reward_sum
 
         if args.vision:
@@ -75,7 +84,10 @@ def main():
         # print(t, action, reward_sum, dqn(torch.tensor(np.float32(state)).unsqueeze(0)))
 
     env.close()
-    print("Avg Epi Rwd: ", sum(episode_rewards) / 20)
+    episode_rewards = np.array(episode_rewards[1:])
+    truncated_episode_rewards = np.array(truncated_episode_rewards[1:])
+    print("Avg Epi Rwd:", episode_rewards.mean(), 'Std Err:', episode_rewards.std())
+    print("Avg Tru Epi Rwd:", truncated_episode_rewards.mean(), 'Std Err:', truncated_episode_rewards.std())
 
 
 if __name__ == '__main__':
