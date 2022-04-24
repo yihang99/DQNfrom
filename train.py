@@ -28,14 +28,16 @@ def main():
     log_file_name = 'logs/' + time.ctime().replace(' ', '_')[4:20] + args.env + '.txt'
 
     env = gym.make(args.env)
-    dqn = model.DQN((num_stacked_frames, 108, 84), env.action_space.n).to(device)
-    target_dqn = model.DQN((num_stacked_frames, 108, 84), env.action_space.n).to(device)
-    dqn2 = model.DQN((num_stacked_frames, 108, 84), env.action_space.n).to(device)
-    target_dqn2 = model.DQN((num_stacked_frames, 108, 84), env.action_space.n).to(device)
+    # dqn = model.DQN((num_stacked_frames, 108, 84), env.action_space.n).to(device)
+    # target_dqn = model.DQN((num_stacked_frames, 108, 84), env.action_space.n).to(device)
+    # dqn2 = model.DQN((num_stacked_frames, 108, 84), env.action_space.n).to(device)
+    # target_dqn2 = model.DQN((num_stacked_frames, 108, 84), env.action_space.n).to(device)
 
-    # if not args.new_model:
-    #     dqn.load_state_dict(torch.load('ckpts/dqn_ckpt.pth', map_location='cpu'))
-    #     dqn2.load_state_dict(torch.load('ckpts/dqn2_ckpt.pth', map_location='cpu'))
+    dqn = model.LinearQN((num_stacked_frames, 108, 84), env.action_space.n).to(device)
+    target_dqn = model.LinearQN((num_stacked_frames, 108, 84), env.action_space.n).to(device)
+    dqn2 = model.LinearQN((num_stacked_frames, 108, 84), env.action_space.n).to(device)
+    target_dqn2 = model.LinearQN((num_stacked_frames, 108, 84), env.action_space.n).to(device)
+
 
     target_dqn.load_state_dict(dqn.state_dict())
     target_dqn2.load_state_dict(dqn2.state_dict())
@@ -115,8 +117,11 @@ def main():
 
         if t % SAVE_CKPT_INTERVAL == 0:
             ckpt_ind = int(t / SAVE_CKPT_INTERVAL)
-            torch.save(dqn.state_dict(), 'ckpts_double_new2/dqn_double_ckpt_{:0>2d}.pth'.format(ckpt_ind))
-            torch.save(dqn2.state_dict(), 'ckpts_double_new2/dqn2_double_ckpt_{:0>2d}.pth'.format(ckpt_ind))
+            # torch.save(dqn.state_dict(), 'ckpts_double_new2/dqn_double_ckpt_{:0>2d}.pth'.format(ckpt_ind))
+            # torch.save(dqn2.state_dict(), 'ckpts_double_new2/dqn2_double_ckpt_{:0>2d}.pth'.format(ckpt_ind))
+
+            torch.save(dqn.state_dict(), 'ckpts_lndb/dqn_lndb_{:0>2d}.pth'.format(ckpt_ind))
+            torch.save(dqn2.state_dict(), 'ckpts_lndb/dqn2_lndb_{:0>2d}.pth'.format(ckpt_ind))
         env.close()
 
 

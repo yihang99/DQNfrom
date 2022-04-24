@@ -26,8 +26,11 @@ def main():
     log_file_name = 'logs/' + time.ctime().replace(' ', '_')[4:20] + args.env + '.txt'
 
     env = gym.make(args.env)
-    dqn = model.DQN((num_stacked_frames, 108, 84), env.action_space.n).to(device)
-    target_dqn = model.DQN((num_stacked_frames, 108, 84), env.action_space.n).to(device)
+    # dqn = model.DQN((num_stacked_frames, 108, 84), env.action_space.n).to(device)
+    # target_dqn = model.DQN((num_stacked_frames, 108, 84), env.action_space.n).to(device)
+
+    dqn = model.LinearQN((num_stacked_frames, 108, 84), env.action_space.n).to(device)
+    target_dqn = model.LinearQN((num_stacked_frames, 108, 84), env.action_space.n).to(device)
 
     target_dqn.load_state_dict(dqn.state_dict())
 
@@ -94,8 +97,8 @@ def main():
 
         if t % SAVE_CKPT_INTERVAL == 0:
             ckpt_ind = int(t / SAVE_CKPT_INTERVAL)
-            torch.save(dqn.state_dict(), 'ckpts_single_new2/dqn_single_ckpt_{:0>2d}.pth'.format(ckpt_ind))
-
+            # torch.save(dqn.state_dict(), 'ckpts_single_new2/dqn_single_ckpt_{:0>2d}.pth'.format(ckpt_ind))
+            torch.save(dqn.state_dict(), 'ckpts_lnsg/dqn_lnsg_{:0>2d}.pth'.format(ckpt_ind))
         env.close()
 
 

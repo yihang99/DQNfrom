@@ -26,15 +26,23 @@ def main():
 
     env = gym.make(args.env)
 
-    dqn = model.DQN((num_stacked_frames, 108, 84), env.action_space.n).to(device)
-
     points = []
     for ckpt_ind in range(int(NUMBER_OF_TRAINING_STEPS / SAVE_CKPT_INTERVAL)):
         if args.net_type == 'db':
+            dqn = model.DQN((num_stacked_frames, 108, 84), env.action_space.n).to(device)
             dqn.load_state_dict(torch.load('ckpts_double_new/dqn_double_ckpt_{:0>2d}.pth'.format(ckpt_ind),
                                            map_location=torch.device('cpu')))
         elif args.net_type == 'sg':
+            dqn = model.DQN((num_stacked_frames, 108, 84), env.action_space.n).to(device)
             dqn.load_state_dict(torch.load('ckpts_single_new/dqn_single_ckpt_{:0>2d}.pth'.format(ckpt_ind),
+                                           map_location=torch.device('cpu')))
+        elif args.net_type == 'lndb':
+            dqn = model.LinearQN((num_stacked_frames, 108, 84), env.action_space.n).to(device)
+            dqn.load_state_dict(torch.load('ckpts_lndb/dqn_lndb_{:0>2d}.pth'.format(ckpt_ind),
+                                           map_location=torch.device('cpu')))
+        elif args.net_type == 'lnsg':
+            dqn = model.LinearQN((num_stacked_frames, 108, 84), env.action_space.n).to(device)
+            dqn.load_state_dict(torch.load('ckpts_lnsg/dqn_lnsg_{:0>2d}.pth'.format(ckpt_ind),
                                            map_location=torch.device('cpu')))
         else:
             assert False, 'Net Type Unspecified'

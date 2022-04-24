@@ -48,11 +48,7 @@ class LinearQN(nn.Module):
         self.input_shape = input_shape
         self.num_actions = num_actions
         self.mlp = nn.Sequential(
-            nn.Linear(4 * 84 * 108, 64 * 10 * 7),
-            nn.LeakyReLU(),
-            nn.Linear(64 * 10 * 7, 256),
-            nn.LeakyReLU(),
-            nn.Linear(256, num_actions)
+            nn.Linear(4 * 84 * 108, num_actions)
         )
 
     def forward(self, x):

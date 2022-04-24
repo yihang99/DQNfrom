@@ -22,6 +22,7 @@ def main():
     parser.add_argument('-s', '--seed', default=0, type=int, help='Random seed')
     parser.add_argument('-v', '--vision', action='store_true', default=False,
                         help='Display video if True')
+    parser.add_argument('-n', '--net_type', default='?', help='type of network tested')
 
     args = parser.parse_args()
     # args.input_shape = tuple(args.input_shape)
@@ -33,9 +34,26 @@ def main():
     else:
         env = gym.make(args.env)
 
-    dqn = model.DQN((num_stacked_frames, 108, 84), env.action_space.n).to(device)
-    # dqn.load_state_dict(torch.load('ckpts_double_new/dqn_double_ckpt_30.pth', map_location=torch.device('cpu')))
-    dqn.load_state_dict(torch.load('ckpts_single_new/dqn_single_ckpt_30.pth', map_location=torch.device('cpu')))
+    # dqn = model.DQN((num_stacked_frames, 108, 84), env.action_space.n).to(device)
+    # # dqn.load_state_dict(torch.load('ckpts_double_new/dqn_double_ckpt_30.pth', map_location=torch.device('cpu')))
+    # dqn.load_state_dict(torch.load('ckpts_single_new/dqn_single_ckpt_30.pth', map_location=torch.device('cpu')))
+
+    if args.net_type == 'db':
+        dqn = model.DQN((num_stacked_frames, 108, 84), env.action_space.n).to(device)
+        dqn.load_state_dict(torch.load('ckpts_double_new/dqn_double_ckpt_30.pth',
+                                       map_location=torch.device('cpu')))
+    elif args.net_type == 'sg':
+        dqn = model.DQN((num_stacked_frames, 108, 84), env.action_space.n).to(device)
+        dqn.load_state_dict(torch.load('ckpts_single_new/dqn_single_ckpt_30.pth',
+                                       map_location=torch.device('cpu')))
+    elif args.net_type == 'lndb':
+        dqn = model.LinearQN((num_stacked_frames, 108, 84), env.action_space.n).to(device)
+        dqn.load_state_dict(torch.load('ckpts_lndb/dqn_lndb_30.pth',
+                                       map_location=torch.device('cpu')))
+    elif args.net_type == 'lnsg':
+        dqn = model.LinearQN((num_stacked_frames, 108, 84), env.action_space.n).to(device)
+        dqn.load_state_dict(torch.load('ckpts_lnsg/dqn_lnsg_30.pth',
+                                       map_location=torch.device('cpu')))
 
     buffer = utils.Buffer()
     frame = env.reset()
