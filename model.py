@@ -13,14 +13,19 @@ class DQN(nn.Module):
         self.input_shape = input_shape
         self.num_actions = num_actions
         self.conv = nn.Sequential(
-            nn.Conv2d(input_shape[0], 16, kernel_size=(8, 8), stride=(4, 4)),
+            nn.Conv2d(input_shape[0], 32, kernel_size=(8, 8), stride=(4, 4)),
+            # nn.BatchNorm2d(32),
             nn.ReLU(),
-            nn.Conv2d(16, 32, kernel_size=(4, 4), stride=(2, 2)),
+            nn.Conv2d(32, 64, kernel_size=(4, 4), stride=(2, 2)),
+            # nn.BatchNorm2d(64),
+            nn.ReLU(),
+            nn.Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1)),
+            # nn.BatchNorm2d(64),
             nn.ReLU()
         )
         self.mlp = nn.Sequential(
-            nn.Linear(32 * 9 * 9, 256),
-            nn.ReLU(),
+            nn.Linear(64 * 10 * 7, 256),
+            nn.LeakyReLU(),
             nn.Linear(256, num_actions)
         )
 
@@ -37,10 +42,30 @@ class DQN(nn.Module):
         return action
 
 
+class LinearQN(nn.Module):
+    def __init__(self, input_shape, num_actions):
+        super(LinearQN, self).__init__()
+        self.input_shape = input_shape
+        self.num_actions = num_actions
+        self.mlp = nn.Sequential(
+            nn.Linear(4 * 84 * 108, num_actions)
+        )
+
+    def forward(self, x):
+        x = x.reshape(x.shape[0], -1)
+        x = self.mlp(x)
+        return x
+
+    def act(self, state, device=device):
+        state = torch.tensor(np.float32(state)).unsqueeze(0).to(device)
+        q_value = self.forward(state)
+        action = q_value.max(1)[1].data[0]
+        return action
+
 def main():
-    shape = num_stacked_frames, 84, 84
+    shape = num_stacked_frames, *compressed_size
     m = DQN(shape, 5)
-    x = torch.randn(3, *shape)
+    x = torch.randn(num_stacked_frames, *shape)
     print(m(x).shape)
     print(m(x))
 
